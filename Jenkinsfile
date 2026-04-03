@@ -30,41 +30,41 @@ pipeline {
             steps {
                 sh '''
                 docker rm -f $CONTAINER_NAME || true
+                docker ps -q --filter "publish=$PORT" | xargs -r docker stop
+                docker ps -aq --filter "publish=$PORT" | xargs -r docker rm
                 '''
             }
         }
 
         stage('Run New Container') {
-    steps {
-        sh '''
-        docker run -d -p $PORT:3000 \
-        --name $CONTAINER_NAME \
-        $IMAGE_NAME:latest
-        '''
-    }
-}
+            steps {
+                sh '''
+                docker run -d -p $PORT:3000 \
+                --name $CONTAINER_NAME \
+                $IMAGE_NAME:latest
+                '''
+            }
+        }
 
         stage('Clean Old Images') {
             steps {
-                sh '''
-                docker image prune -f
-                '''
+                sh 'docker image prune -f'
             }
         }
     }
 
     post {
-    success {
-        script {
-            // Get public IP dynamically
-            def publicIP = sh(
-                script: "curl -s ifconfig.me",
-                returnStdout: true
-            ).trim()
 
-            mail to: 'prtkbamane@gmail.com',
-                 subject: "YouTube Clone Build Success ✅",
-                 body: """
+        success {
+            script {
+                def publicIP = sh(
+                    script: "curl -s ifconfig.me",
+                    returnStdout: true
+                ).trim()
+
+                mail to: 'prtkbamane@gmail.com',
+                     subject: "YouTube Clone Build Success ✅",
+                     body: """
 Build Status: SUCCESS
 
 Application URLs:
@@ -78,17 +78,18 @@ http://${publicIP}:${PORT}
 Jenkins Build Details:
 ${env.BUILD_URL}
 """
+            }
         }
-    }
 
-    failure {
-        mail to: 'prtkbamane@gmail.com',
-             subject: "YouTube Clone Build Failed ❌",
-             body: """
+        failure {
+            mail to: 'prtkbamane@gmail.com',
+                 subject: "YouTube Clone Build Failed ❌",
+                 body: """
 Build Status: FAILED
 
 Check logs:
 ${env.BUILD_URL}
 """
+        }
     }
 }
