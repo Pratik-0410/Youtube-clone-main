@@ -56,18 +56,22 @@ pipeline {
     post {
 
         success {
-            mail to: 'prtkbamane@gmail.com',
-                 subject: "YouTube Clone Build Success ✅",
-                 body: """
+    script {
+        def serverIP = sh(script: "hostname -I | awk '{print \$1}'", returnStdout: true).trim()
+        
+        mail to: 'prtkbamane@gmail.com',
+             subject: "YouTube Clone Build Success ✅",
+             body: """
 Build Status: SUCCESS
 
 App is running at:
-http://<YOUR-SERVER-IP>:$PORT
+http://${serverIP}:${PORT}
 
 Jenkins Build:
 ${env.BUILD_URL}
 """
-        }
+    }
+}
 
         failure {
             mail to: 'prtkbamane@gmail.com',
