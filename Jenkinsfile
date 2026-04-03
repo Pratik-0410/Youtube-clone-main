@@ -54,30 +54,41 @@ pipeline {
     }
 
     post {
+    success {
+        script {
+            // Get public IP dynamically
+            def publicIP = sh(
+                script: "curl -s ifconfig.me",
+                returnStdout: true
+            ).trim()
 
-        success {
-    mail to: 'prtkbamane@gmail.com',
-         subject: "YouTube Clone Build Success ✅",
-         body: """
+            mail to: 'prtkbamane@gmail.com',
+                 subject: "YouTube Clone Build Success ✅",
+                 body: """
 Build Status: SUCCESS
 
-App is running at:
-http://13.62.20.65:${PORT}
+Application URLs:
 
-Jenkins Build:
+Local Access:
+http://localhost:${PORT}
+
+Remote Access:
+http://${publicIP}:${PORT}
+
+Jenkins Build Details:
 ${env.BUILD_URL}
 """
-}
+        }
+    }
 
-        failure {
-            mail to: 'prtkbamane@gmail.com',
-                 subject: "YouTube Clone Build Failed ❌",
-                 body: """
+    failure {
+        mail to: 'prtkbamane@gmail.com',
+             subject: "YouTube Clone Build Failed ❌",
+             body: """
 Build Status: FAILED
 
 Check logs:
 ${env.BUILD_URL}
 """
-        }
     }
 }
