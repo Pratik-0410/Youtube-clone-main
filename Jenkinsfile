@@ -35,14 +35,14 @@ pipeline {
         }
 
         stage('Run New Container') {
-            steps {
-                sh '''
-                docker run -d -p $PORT:80 \
-                --name $CONTAINER_NAME \
-                $IMAGE_NAME:latest
-                '''
-            }
-        }
+    steps {
+        sh '''
+        docker run -d -p $PORT:3000 \
+        --name $CONTAINER_NAME \
+        $IMAGE_NAME:latest
+        '''
+    }
+}
 
         stage('Clean Old Images') {
             steps {
