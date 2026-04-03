@@ -17,10 +17,10 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                withCredentials([string(credentialsId: 'TMDB_API_KEY', variable: 'API_KEY')]) {
+                withCredentials([string(credentialsId: 'RAPID_API_KEY', variable: 'API_KEY')]) {
                     sh '''
                     docker build -t $IMAGE_NAME:latest \
-                    --build-arg TMDB_V3_API_KEY=$API_KEY .
+                    --build-arg REACT_APP_RAPID_API_KEY=$API_KEY .
                     '''
                 }
             }
