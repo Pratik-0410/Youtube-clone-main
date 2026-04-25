@@ -1,39 +1,69 @@
-import React, { useEffect, useState } from "react";
-import { Box, Stack, Typography } from "@mui/material";
-
+import React, { useState, useEffect } from "react";
+import Sidebar from "./Sidebar";
+import VideoCard from "./VideoCard";
 import { fetchFromAPI } from "../utils/fetchFromAPI";
-import { Videos, Sidebar } from "./";
 
-const Feed = () => {
+export default function Feed() {
+  const [videos, setVideos] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("New");
-  const [videos, setVideos] = useState(null);
 
   useEffect(() => {
-    setVideos(null);
-
-    fetchFromAPI(`search?part=snippet&q=${selectedCategory}`)
-      .then((data) => setVideos(data.items))
-    }, [selectedCategory]);
+    fetchFromAPI(
+      `search?part=snippet&q=${selectedCategory}&type=video&maxResults=20`
+    ).then((data) => setVideos(data?.items || []));
+  }, [selectedCategory]);
 
   return (
-    <Stack sx={{ flexDirection: { sx: "column", md: "row" } }}>
-      <Box sx={{ height: { sx: "auto", md: "92vh" }, borderRight: "1px solid #3d3d3d", px: { sx: 0, md: 2 } }}>
-        <Sidebar selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} />
-        
-        <Typography className="copyright" variant="body2" sx={{ mt: 1.5, color: "#fff", }}>
-          © 2026 Pratik Bamane
-        </Typography>
-      </Box>
+    <div style={{ display: "flex" }}>
+      {/* SIDEBAR */}
+      <div
+        style={{
+          width: "220px",
+          borderRight: "1px solid #ddd",
+          padding: "10px",
+        }}
+      >
+        <Sidebar
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+        />
+      </div>
 
-      <Box p={2} sx={{ overflowY: "auto", height: "90vh", flex: 2 }}>
-        <Typography variant="h4" fontWeight="bold" mb={2} sx={{ color: "white" }}>
-          {selectedCategory} <span style={{ color: "#FC1503" }}>videos</span>
-        </Typography>
+      {/* MAIN */}
+      <div style={{ flex: 1, padding: "20px" }}>
+        {/* CATEGORY */}
+        <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+          {["All", "Music", "Gaming", "ReactJS", "Live"].map((tab) => (
+            <button
+              key={tab}
+              style={{
+                padding: "8px 15px",
+                borderRadius: "20px",
+                border: "none",
+                background: "#eee",
+                cursor: "pointer",
+              }}
+              onClick={() => setSelectedCategory(tab)}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
 
-        <Videos videos={videos} />
-      </Box>
-    </Stack>
+        {/* VIDEOS */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+            gap: "20px",
+          }}
+        >
+          {videos.map((item, i) => {
+            if (!item?.id?.videoId) return null;
+            return <VideoCard key={i} video={item} />;
+          })}
+        </div>
+      </div>
+    </div>
   );
-};
-
-export default Feed;
+}
