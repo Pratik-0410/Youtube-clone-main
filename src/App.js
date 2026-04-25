@@ -1,20 +1,40 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { Box } from '@mui/material';
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 
-import { ChannelDetail, VideoDetail, SearchFeed, Navbar, Feed } from './components';
+import {
+  Feed,
+  VideoDetail,
+  ChannelDetail,
+  SearchFeed,
+  Navbar,
+} from "./components";
 
-const App = () => (
-  <BrowserRouter>
-    <Box sx={{ backgroundColor: '#000' }}>
-      <Navbar />
+import Login from "./pages/login";
+import Profile from "./pages/Profile";
+
+function AppContent() {
+  const location = useLocation();
+
+  return (
+    <>
+      {/* Hide Navbar only on login */}
+      {location.pathname !== "/login" && <Navbar />}
+
       <Routes>
-        <Route exact path='/' element={<Feed />} />
-        <Route path='/video/:id' element={<VideoDetail />} />
-        <Route path='/channel/:id' element={<ChannelDetail />} />
-        <Route path='/search/:searchTerm' element={<SearchFeed />} />
+        <Route path="/" element={<Feed />} />
+        <Route path="/video/:id" element={<VideoDetail />} />
+        <Route path="/channel/:id" element={<ChannelDetail />} />
+        <Route path="/search/:searchTerm" element={<SearchFeed />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
-    </Box>
-  </BrowserRouter>
-);
+    </>
+  );
+}
 
-export default App;
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
+  );
+}
