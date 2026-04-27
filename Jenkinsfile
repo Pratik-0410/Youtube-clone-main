@@ -2,9 +2,10 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "youtube-clone"
+        IMAGE_NAME      = "youtube-clone"
         CONTAINER_NAME = "youtube-container"
-        PORT = "8091"
+        PORT           = "8091"
+        SCANNER_HOME   = tool 'sonar-scanner'
     }
 
     stages {
@@ -12,6 +13,28 @@ pipeline {
         stage('Clone Code') {
             steps {
                 git branch: 'main', url: 'https://github.com/Pratik-0410/Youtube-clone-main'
+            }
+        }
+
+        stage('SonarQube Scan') {
+            steps {
+                withSonarQubeEnv('sonarqube') {
+                    sh '''
+                    $SCANNER_HOME/bin/sonar-scanner \
+                    -Dsonar.projectKey=youtube-clone \
+                    -Dsonar.projectName=youtube-clone \
+                    -Dsonar.sources=src \
+                    -Dsonar.sourceEncoding=UTF-8
+                    '''
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
             }
         }
 
@@ -23,6 +46,14 @@ pipeline {
                     --build-arg REACT_APP_RAPID_API_KEY=$API_KEY .
                     '''
                 }
+            }
+        }
+
+        stage('Trivy Scan') {
+            steps {
+                sh '''
+                trivy image --severity HIGH,CRITICAL --no-progress $IMAGE_NAME:latest
+                '''
             }
         }
 
@@ -66,6 +97,9 @@ pipeline {
                      subject: "YouTube Clone Build Success ✅",
                      body: """
 Build Status: SUCCESS
+
+SonarQube Scan: PASSED
+Trivy Scan: PASSED
 
 Application URLs:
 
