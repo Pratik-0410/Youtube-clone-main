@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME      = "youtube-clone"
+        IMAGE_NAME      = "youtube-clone-app"
         CONTAINER_NAME  = "youtube-container"
         PORT            = "8091"
         SCANNER_HOME    = tool 'sonar-scanner'
@@ -12,7 +12,8 @@ pipeline {
 
         stage('Clone Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/Pratik-0410/Youtube-clone-main'
+                git branch: 'main',
+                url: 'https://github.com/Pratik-0410/Youtube-clone-main'
             }
         }
 
@@ -75,6 +76,23 @@ pipeline {
             }
         }
 
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh '''
+                kubectl apply -f deployment.yml
+                '''
+            }
+        }
+
+        stage('Verify Kubernetes Deployment') {
+            steps {
+                sh '''
+                kubectl get pods
+                kubectl get svc
+                '''
+            }
+        }
+
         stage('Clean Old Images') {
             steps {
                 sh 'docker image prune -f'
@@ -86,26 +104,32 @@ pipeline {
 
         success {
             script {
+
                 def publicIP = sh(
                     script: "curl -s ifconfig.me",
                     returnStdout: true
                 ).trim()
 
                 mail to: 'prtkbamane@gmail.com',
-                     subject: "YouTube Clone Build Success ✅",
-                     body: """
+                subject: "YouTube Clone Build Success ✅",
+                body: """
 Build Status: SUCCESS
 
 SonarQube Scan: PASSED
 Trivy Scan: PASSED
+Kubernetes Deployment: SUCCESS
 
 Application URLs:
 
-Local Access:
+Docker Access:
 http://localhost:${PORT}
 
 Remote Access:
 http://${publicIP}:${PORT}
+
+Kubernetes Access:
+Run:
+minikube service youtube-service
 
 Jenkins Build Details:
 ${env.BUILD_URL}
@@ -115,11 +139,11 @@ ${env.BUILD_URL}
 
         failure {
             mail to: 'prtkbamane@gmail.com',
-                 subject: "YouTube Clone Build Failed ❌",
-                 body: """
+            subject: "YouTube Clone Build Failed ❌",
+            body: """
 Build Status: FAILED
 
-Check logs:
+Check Jenkins Logs:
 ${env.BUILD_URL}
 """
         }
