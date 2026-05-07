@@ -2,12 +2,10 @@ pipeline {
     agent any
 
     environment {
- HEAD
-        IMAGE_NAME      = "youtube-clone-app"
-        IMAGE_NAME      = "youtube-clone"
-        CONTAINER_NAME  = "youtube-container"
-        PORT            = "8091"
-        SCANNER_HOME    = tool 'sonar-scanner'
+        IMAGE_NAME = "youtube-clone-app"
+        CONTAINER_NAME = "youtube-container"
+        PORT = "8091"
+        SCANNER_HOME = tool 'sonar-scanner'
     }
 
     stages {
@@ -19,99 +17,9 @@ pipeline {
             }
         }
 
-        stage('SonarQube Scan') {
+        stage('Check Docker Access') {
             steps {
-                withSonarQubeEnv('sonarqube') {
-                    sh '''
-                    $SCANNER_HOME/bin/sonar-scanner \
-                    -Dsonar.projectKey=youtube-clone \
-                    -Dsonar.projectName=youtube-clone \
-                    -Dsonar.sources=src \
-                    -Dsonar.sourceEncoding=UTF-8
-                    '''
-                }
-            }
-        }
-
-        stage('Quality Gate') {
-            steps {
-                echo 'Skipping Quality Gate for now'
-            }
-        }
-
-        stage('SonarQube Scan') {
-            steps {
-                withSonarQubeEnv('sonarqube') {
-                    sh '''
-                    $SCANNER_HOME/bin/sonar-scanner \
-                    -Dsonar.projectKey=youtube-clone \
-                    -Dsonar.projectName=youtube-clone \
-                    -Dsonar.sources=src \
-                    -Dsonar.sourceEncoding=UTF-8
-                    '''
-                }
-            }
-        }
-
-        stage('Quality Gate') {
-            steps {
-                echo 'Skipping Quality Gate for now'
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                withCredentials([string(credentialsId: 'RAPID_API_KEY', variable: 'API_KEY')]) {
-                    sh '''
-                    docker build -t $IMAGE_NAME:latest \
-                    --build-arg REACT_APP_RAPID_API_KEY=$API_KEY .
-                    '''
-                }
-            }
-        }
-
-        stage('Trivy Scan') {
-            steps {
-                sh '''
-                trivy image --severity HIGH,CRITICAL --no-progress $IMAGE_NAME:latest
-                '''
-            }
-        }
-
-        stage('Stop & Remove Old Container') {
-            steps {
-                sh '''
-                docker rm -f $CONTAINER_NAME || true
-                docker ps -q --filter "publish=$PORT" | xargs -r docker stop
-                docker ps -aq --filter "publish=$PORT" | xargs -r docker rm
-                '''
-            }
-        }
-
-        stage('Run New Container') {
-            steps {
-                sh '''
-                docker run -d -p $PORT:3000 \
-                --name $CONTAINER_NAME \
-                $IMAGE_NAME:latest
-                '''
-            }
-        }
-
-        stage('Deploy to Kubernetes') {
-            steps {
-                sh '''
-                kubectl apply -f deployment.yml
-                '''
-            }
-        }
-
-        stage('Verify Kubernetes Deployment') {
-            steps {
-                sh '''
-                kubectl get pods
-                kubectl get svc
-                '''
+                sh 'docker ps'
             }
         }
 
@@ -120,55 +28,72 @@ pipeline {
                 sh 'docker image prune -f'
             }
         }
-    }
 
-    post {
-
-        success {
-            script {
-
-                def publicIP = sh(
-                    script: "curl -s ifconfig.me",
-                    returnStdout: true
-                ).trim()
-
-                mail to: 'prtkbamane@gmail.com',
-                subject: "YouTube Clone Build Success ✅",
-                body: """
-Build Status: SUCCESS
-
-SonarQube Scan: PASSED
-Trivy Scan: PASSED HEAD
-Kubernetes Deployment: SUCCESS
-
-
-Application URLs:
-
-Docker Access:
-http://localhost:${PORT}
-
-Remote Access:
-http://${publicIP}:${PORT}
-
-Kubernetes Access:
-Run:
-minikube service youtube-service
-
-Jenkins Build Details:
-${env.BUILD_URL}
-"""
+        stage('SonarQube Scan') {
+            steps {
+                withSonarQubeEnv('sonarqube') {
+                    sh """
+                    ${SCANNER_HOME}/bin/sonar-scanner \
+                    -Dsonar.projectKey=youtube-clone \
+                    -Dsonar.projectName=youtube-clone \
+                    -Dsonar.sources=src
+                    """
+                }
             }
         }
 
-        failure {
-            mail to: 'prtkbamane@gmail.com',
-            subject: "YouTube Clone Build Failed ❌",
-            body: """
-Build Status: FAILED
+        stage('Build Docker Image') {
+            steps {
+                withCredentials([string(credentialsId: 'RAPID_API_KEY', variable: 'API_KEY')]) {
+                    sh """
+                    docker build -t ${IMAGE_NAME}:latest \
+                    --build-arg REACT_APP_RAPID_API_KEY=${API_KEY} .
+                    """
+                }
+            }
+        }
 
-Check Jenkins Logs:
-${env.BUILD_URL}
-"""
+        stage('Trivy Scan') {
+            steps {
+                sh "trivy image ${IMAGE_NAME}:latest"
+            }
+        }
+
+        stage('Run Docker Container') {
+            steps {
+                sh """
+                docker rm -f ${CONTAINER_NAME} || true
+
+                docker run -d \
+                -p ${PORT}:3000 \
+                --name ${CONTAINER_NAME} \
+                ${IMAGE_NAME}:latest
+                """
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh 'kubectl apply -f deployment.yml'
+                sh 'kubectl apply -f service.yml'
+            }
+        }
+
+        stage('Verify Kubernetes Deployment') {
+            steps {
+                sh 'kubectl get pods'
+                sh 'kubectl get svc'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline Executed Successfully'
+        }
+
+        failure {
+            echo 'Pipeline Failed'
         }
     }
 }
