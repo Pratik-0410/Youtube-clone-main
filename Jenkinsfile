@@ -5,7 +5,6 @@ pipeline {
  HEAD
         IMAGE_NAME      = "youtube-clone-app"
         IMAGE_NAME      = "youtube-clone"
-1851b77 (Added Kubernetes deployment and updated Jenkins pipeline)
         CONTAINER_NAME  = "youtube-container"
         PORT            = "8091"
         SCANNER_HOME    = tool 'sonar-scanner'
@@ -139,11 +138,9 @@ pipeline {
 Build Status: SUCCESS
 
 SonarQube Scan: PASSED
-Trivy Scan: PASSED
-<<<<<<< HEAD
+Trivy Scan: PASSED HEAD
 Kubernetes Deployment: SUCCESS
-=======
->>>>>>> 1851b77 (Added Kubernetes deployment and updated Jenkins pipeline)
+
 
 Application URLs:
 
