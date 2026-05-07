@@ -2,7 +2,10 @@ pipeline {
     agent any
 
     environment {
+ HEAD
         IMAGE_NAME      = "youtube-clone-app"
+        IMAGE_NAME      = "youtube-clone"
+1851b77 (Added Kubernetes deployment and updated Jenkins pipeline)
         CONTAINER_NAME  = "youtube-container"
         PORT            = "8091"
         SCANNER_HOME    = tool 'sonar-scanner'
@@ -14,6 +17,26 @@ pipeline {
             steps {
                 git branch: 'main',
                 url: 'https://github.com/Pratik-0410/Youtube-clone-main'
+            }
+        }
+
+        stage('SonarQube Scan') {
+            steps {
+                withSonarQubeEnv('sonarqube') {
+                    sh '''
+                    $SCANNER_HOME/bin/sonar-scanner \
+                    -Dsonar.projectKey=youtube-clone \
+                    -Dsonar.projectName=youtube-clone \
+                    -Dsonar.sources=src \
+                    -Dsonar.sourceEncoding=UTF-8
+                    '''
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                echo 'Skipping Quality Gate for now'
             }
         }
 
@@ -117,7 +140,10 @@ Build Status: SUCCESS
 
 SonarQube Scan: PASSED
 Trivy Scan: PASSED
+<<<<<<< HEAD
 Kubernetes Deployment: SUCCESS
+=======
+>>>>>>> 1851b77 (Added Kubernetes deployment and updated Jenkins pipeline)
 
 Application URLs:
 
