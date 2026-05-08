@@ -73,30 +73,17 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                script {
-                    try {
-                        sh 'kubectl apply -f deployment.yml --validate=false'
-                        sh 'kubectl apply -f service.yml --validate=false'
-                        echo 'Kubernetes deployment successful!'
-                    } catch (Exception e) {
-                        echo 'Kubernetes deployment completed with warnings'
-                        currentBuild.result = 'SUCCESS'
-                    }
-                }
+                sh 'kubectl apply -f deployment.yml'
+                sh 'kubectl apply -f service.yml'
+                sh 'kubectl rollout status deployment/youtube-deployment --timeout=120s'
             }
         }
 
         stage('Verify Kubernetes Deployment') {
             steps {
-                script {
-                    try {
-                        sh 'kubectl get pods'
-                        sh 'kubectl get svc'
-                    } catch (Exception e) {
-                        echo 'Kubernetes verification completed'
-                        currentBuild.result = 'SUCCESS'
-                    }
-                }
+                sh 'kubectl get pods'
+                sh 'kubectl get svc'
+                sh 'kubectl get deployment'
             }
         }
     }
