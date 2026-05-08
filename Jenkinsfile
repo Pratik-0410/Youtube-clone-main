@@ -72,12 +72,12 @@ pipeline {
         }
 
         stage('Deploy to Kubernetes') {
-    steps {
-        sh 'kubectl apply -f deployment.yml --validate=false'
-        sh 'kubectl apply -f service.yml --validate=false'
-        sh 'kubectl rollout status deployment/youtube-deployment --timeout=120s'
-    }
-}
+            steps {
+                sh 'kubectl apply -f deployment.yml --validate=false'
+                sh 'kubectl apply -f service.yml --validate=false'
+                sh 'kubectl rollout status deployment/youtube-deployment --timeout=120s'
+            }
+        }
 
         stage('Verify Kubernetes Deployment') {
             steps {
