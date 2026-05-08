@@ -6,6 +6,7 @@ pipeline {
         CONTAINER_NAME = "youtube-container"
         PORT = "8091"
         SCANNER_HOME = tool 'sonar-scanner'
+        KUBECONFIG = "/var/jenkins_home/.kube/config"
     }
 
     stages {
